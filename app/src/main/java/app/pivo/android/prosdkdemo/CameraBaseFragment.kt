@@ -24,13 +24,14 @@ import java.net.InetAddress
 //UDP 관련
 import java.net.DatagramPacket
 import java.net.DatagramSocket
+import java.net.SocketTimeoutException
 
 open class CameraBaseFragment : Fragment(), ICameraCallback {
 
     //val: 상수, var: 변수
     //소켓 통신을 위한 변수
-    val ip: String = "192.168.0.93"  //192.168.0.2(연구실 노트북 ip주소) (서버 주소)
-    val port: Int = 9999 //port 번호(정수여야 한다) (사용할 통신 포트, 서버 포트)
+    val serverIp: String = "192.168.0.93"  //서버 주소
+    val port: Int = 8000  //port 번호(정수여야 함) (사용할 통신 포트, 서버에서 설정한 UDP 포트번호)
     var client: DatagramSocket? = null //클라이언트 소켓
     var serverAddr: InetAddress? = null //retrieve the servername
 
@@ -54,15 +55,23 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
         try {
             //클라이언트 소켓 종료 + 시작, UDP 소켓 생성
             //client?.close()
-            serverAddr = InetAddress.getByName(ip) //서버 ip 주소 가져오기
-            client = DatagramSocket(port)
-            var welcome_message:ByteArray = ("Hello! I'm android, client.").toByteArray()
-            var packet = DatagramPacket(welcome_message, welcome_message.size, serverAddr, port)
-            client!!.send(packet) //서버로 데이터 보내기, ?: null일 수 있음을 의미
+            serverAddr = InetAddress.getByName(serverIp) //서버 ip 주소 가져오기
+            client = DatagramSocket()
             Log.d("Socket","Client socket start!!!")
 
+            var welcome_message:ByteArray = ("Hello! I'm android, client.").toByteArray()
+            var packet = DatagramPacket(welcome_message, welcome_message.size, serverAddr, port)
+
+            //스레드로 실행 (클라이언트에서 서버로 메세지 보내기)
+
+
+            Log.d("Socket","Client and Server connected")
         } catch (e: Exception){
             Log.d("Exception",e.toString())
+        } catch (e: SocketTimeoutException){
+            Log.d("Timeout error",e.toString())
+        } catch (e: InterruptedException){
+            Log.d("Error", e.toString())
         }
 
         switch_camera_view.setOnClickListener {
@@ -434,9 +443,8 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
     class SendData: Thread(){
         override fun run(){
             try {
-                //UDP 통신용 소켓 생성
-                var socket: DatagramSocket = DatagramSocket()
-                //서버 주소 변수
+//                CameraBaseFragment.client.broadcast = true
+//                CameraBaseFragment.client.send(packet) //서버로 데이터 보내기, ?: null일 수 있음을 의미
 
             } catch (e: Exception) {
 
