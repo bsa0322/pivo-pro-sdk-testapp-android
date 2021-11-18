@@ -25,7 +25,7 @@ class PivoScanningActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pivo_scanning)
 
-        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.INTERNET), 321);
+        //ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.INTERNET), 321);
 
         //initialize device scan adapter
         resultAdapter = ScanResultsAdapter()
