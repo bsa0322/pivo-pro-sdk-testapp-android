@@ -105,6 +105,7 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
         tracking_graphic_overlay.setListener(actionSelectListener)
     }
 
+    //쓰레드로 연결
     class Connect:Thread(){
         override fun run(){
             //소켓 생성
@@ -387,46 +388,47 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
             // being tracked object
             val rect = Rect(x, y, x + width, y + height) //x: 열, y: 행
 
-            //바운딩 박스 백분율 계산
-            val x1: Float = x.toFloat() / 960
-            val x2: Float = (x + width).toFloat() / 960
-            val y1: Float = y.toFloat() / 720
-            val y2: Float = (y + height).toFloat() / 720
+            //바운딩 박스 (그냥 int로 보내기)
+            var x1_int: Int = x
+            var x2_int: Int = x + width
+            var y1_int: Int = y
+            var y2_int: Int = y + height
 
-            //바운딩 박스 영역 출력(0,0) -> (960,720)
-//            Log.d("tracking", "box: " + x1 + " " + y1 + " " + x2 + " " + y2)
+            //음수 안되도록 처리
+            if(x1_int < 0) x1_int = 0
+            if(x2_int < 0) x2_int = 0
+            if(y1_int < 0) y1_int = 0
+            if(y2_int < 0) y2_int = 0
+
+            //바운딩 박스 영역 출력(0,0) -> (970,720)
+            Log.d("tracking", "box: " + x1_int + " " + y1_int + " " + x2_int + " " + y2_int)
 
             //소켓 데이터 송신하기
             var sendT:ByteArray = ByteArray(16) //크기 16(4바이트 * 4개)
-            var x1_int = x1.toInt()
-            var x2_int = x2.toInt()
-            var y1_int = y1.toInt()
-            var y2_int = y2.toInt()
-            sendT[0] = (x1_int shr 24).toByte() //shr: >>
-            sendT[1] = (x1_int shr 16).toByte()
-            sendT[2] = (x1_int shr 8).toByte()
-            sendT[3] = (x1_int).toByte()
-            sendT[4] = (x2_int shr 24).toByte()
-            sendT[5] = (x2_int shr 16).toByte()
-            sendT[6] = (x2_int shr 8).toByte()
-            sendT[7] = (x2_int).toByte()
-            sendT[8] = (y1_int shr 24).toByte()
-            sendT[9] = (y1_int shr 16).toByte()
-            sendT[10] = (y1_int shr 8).toByte()
-            sendT[11] = (y1_int).toByte()
-            sendT[12] = (y2_int shr 24).toByte()
-            sendT[13] = (y2_int shr 16).toByte()
-            sendT[14] = (y2_int shr 8).toByte()
-            sendT[15] = (y2_int).toByte()
+            sendT[0] = (x1_int).toByte() //shr: >>
+            sendT[1] = (x1_int shr 8).toByte()
+            sendT[2] = (x1_int shr 16).toByte()
+            sendT[3] = (x1_int shr 24).toByte()
+            sendT[4] = (x2_int).toByte()
+            sendT[5] = (x2_int shr 8).toByte()
+            sendT[6] = (x2_int shr 16).toByte()
+            sendT[7] = (x2_int shr 24).toByte()
+            sendT[8] = (y1_int).toByte()
+            sendT[9] = (y1_int shr 8).toByte()
+            sendT[10] = (y1_int shr 16).toByte()
+            sendT[11] = (y1_int shr 24).toByte()
+            sendT[12] = (y2_int).toByte()
+            sendT[13] = (y2_int shr 8).toByte()
+            sendT[14] = (y2_int shr 16).toByte()
+            sendT[15] = (y2_int shr 24).toByte()
 
+            //메세지 만들기
             var packet = DatagramPacket(sendT, sendT.size, serverAddr, port)
 
+            //메세지 전달 스레드 호출
             val mThread = SendMessage()
             mThread.setMsg(packet)
             mThread.start()
-
-            //바운딩 박스 영역 출력(0,0) -> (960,720)
-            Log.d("tracking", "box: " + packet.getData().toString())
 
             // create an instance of ActionGraphic and add view to parent tracking layout
             val graphic = ActionGraphic(tracking_graphic_overlay, rect)
@@ -460,6 +462,8 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
         override fun run(){
             try{
                 client?.send(msg)
+                //바운딩 박스 영역 출력(0,0) -> (970,720)
+//                Log.d("tracking", "box: " + msg.getData().toString())
             }catch(e:Exception){
                 Log.d("SendMessageE",e.toString())
             }
