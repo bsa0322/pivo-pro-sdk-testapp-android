@@ -28,12 +28,14 @@ import java.net.SocketTimeoutException
 
 open class CameraBaseFragment : Fragment(), ICameraCallback {
 
-    //val: 상수, var: 변수
-    //소켓 통신을 위한 변수
-    val serverIp: String = "192.168.0.93"  //서버 주소
-    val port: Int = 8000  //port 번호(정수여야 함) (사용할 통신 포트, 서버에서 설정한 UDP 포트번호)
-    var client: DatagramSocket? = null //클라이언트 소켓
-    var serverAddr: InetAddress? = null //retrieve the servername
+    companion object{
+        //val: 상수, var: 변수
+        //소켓 통신을 위한 변수
+        val serverIp: String = "192.168.0.93"  //서버 주소
+        val port: Int = 8000  //port 번호(정수여야 함) (사용할 통신 포트, 서버에서 설정한 UDP 포트번호)
+        var client: DatagramSocket? = null //클라이언트 소켓
+        var serverAddr: InetAddress? = null //retrieve the servername
+    }
 
     var tracking: Tracking = Tracking.NONE
     var sensitivity: PivoSensitivity = PivoSensitivity.NORMAL
@@ -52,27 +54,7 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
         super.onViewCreated(view, savedInstanceState)
 
         //소켓 생성
-        try {
-            //클라이언트 소켓 종료 + 시작, UDP 소켓 생성
-            //client?.close()
-            serverAddr = InetAddress.getByName(serverIp) //서버 ip 주소 가져오기
-            client = DatagramSocket()
-            Log.d("Socket","Client socket start!!!")
-
-            var welcome_message:ByteArray = ("Hello! I'm android, client.").toByteArray()
-            var packet = DatagramPacket(welcome_message, welcome_message.size, serverAddr, port)
-
-            //스레드로 실행 (클라이언트에서 서버로 메세지 보내기)
-
-
-            Log.d("Socket","Client and Server connected")
-        } catch (e: Exception){
-            Log.d("Exception",e.toString())
-        } catch (e: SocketTimeoutException){
-            Log.d("Timeout error",e.toString())
-        } catch (e: InterruptedException){
-            Log.d("Error", e.toString())
-        }
+        Connect().start()
 
         switch_camera_view.setOnClickListener {
             switchCamera()
@@ -121,6 +103,31 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
 
         //tracking layout
         tracking_graphic_overlay.setListener(actionSelectListener)
+    }
+
+    class Connect:Thread(){
+        override fun run(){
+            //소켓 생성
+            try {
+                //클라이언트 UDP 소켓 생성
+                serverAddr = InetAddress.getByName(serverIp) //서버 ip 주소 가져오기
+                client = DatagramSocket()
+                Log.d("Socket","Client socket start!!!")
+
+                var welcome_message:ByteArray = ("Hello! I'm android, client.").toByteArray()
+                var packet = DatagramPacket(welcome_message, welcome_message.size, serverAddr, port)
+
+                //스레드로 실행 (클라이언트에서 서버로 메세지 보내기)
+                client!!.send(packet)
+                Log.d("Socket","Client and Server connected")
+            } catch (e: Exception){
+                Log.d("Exception",e.toString())
+            } catch (e: SocketTimeoutException){
+                Log.d("Timeout error",e.toString())
+            } catch (e: InterruptedException){
+                Log.d("Error", e.toString())
+            }
+        }
     }
 
     open fun switchCamera() {
@@ -413,7 +420,10 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
             sendT[15] = (y2_int).toByte()
 
             var packet = DatagramPacket(sendT, sendT.size, serverAddr, port)
-            client?.send(packet) //서버로 데이터 보내기, ?: null일 수 있음을 의미
+
+            val mThread = SendMessage()
+            mThread.setMsg(packet)
+            mThread.start()
 
             //바운딩 박스 영역 출력(0,0) -> (960,720)
             Log.d("tracking", "box: " + packet.getData().toString())
@@ -439,15 +449,19 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
         override fun onClear() {}
     }
 
-    //데이터 보내는 쓰레드 클래스
-    class SendData: Thread(){
+    //쓰레드로 메세지 보내기
+    class SendMessage:Thread(){
+        private lateinit var msg:DatagramPacket
+
+        fun setMsg(m:DatagramPacket){
+            msg = m
+        }
+
         override fun run(){
-            try {
-//                CameraBaseFragment.client.broadcast = true
-//                CameraBaseFragment.client.send(packet) //서버로 데이터 보내기, ?: null일 수 있음을 의미
-
-            } catch (e: Exception) {
-
+            try{
+                client?.send(msg)
+            }catch(e:Exception){
+                Log.d("SendMessageE",e.toString())
             }
         }
     }
