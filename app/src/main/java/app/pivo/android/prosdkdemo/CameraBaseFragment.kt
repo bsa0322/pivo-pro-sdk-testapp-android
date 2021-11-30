@@ -31,7 +31,7 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
     companion object{
         //val: 상수, var: 변수
         //소켓 통신을 위한 변수
-        val serverIp: String = "192.168.0.93"  //서버 주소
+        val serverIp: String = "10.200.8.245"  //서버 주소
         val port: Int = 8000  //port 번호(정수여야 함) (사용할 통신 포트, 서버에서 설정한 UDP 포트번호)
         var client: DatagramSocket? = null //클라이언트 소켓
         var serverAddr: InetAddress? = null //retrieve the servername
