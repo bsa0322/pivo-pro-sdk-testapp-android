@@ -758,12 +758,12 @@ class CameraController(
         /**
          * Max preview width that is guaranteed by Camera2 API
          */
-        private val MAX_PREVIEW_WIDTH = 1920
+        private val MAX_PREVIEW_WIDTH = 2960
 
         /**
          * Max preview height that is guaranteed by Camera2 API
          */
-        private val MAX_PREVIEW_HEIGHT = 1080
+        private val MAX_PREVIEW_HEIGHT = 1440
 
         /**
          * Given `choices` of `Size`s supported by a camera, choose the smallest one that

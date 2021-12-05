@@ -35,6 +35,8 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
         val port: Int = 8000  //port 번호(정수여야 함) (사용할 통신 포트, 서버에서 설정한 UDP 포트번호)
         var client: DatagramSocket? = null //클라이언트 소켓
         var serverAddr: InetAddress? = null //retrieve the servername
+
+        var check: Boolean = false
     }
 
     var tracking: Tracking = Tracking.NONE
@@ -115,12 +117,12 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
                 client = DatagramSocket()
                 Log.d("Socket","Client socket start!!!")
 
-                var welcome_message:ByteArray = ("Hello! I'm android, client.").toByteArray()
-                var packet = DatagramPacket(welcome_message, welcome_message.size, serverAddr, port)
+//                var welcome_message:ByteArray = ("Hello! I'm android, client.").toByteArray()
+//                var packet = DatagramPacket(welcome_message, welcome_message.size, serverAddr, port)
 
                 //스레드로 실행 (클라이언트에서 서버로 메세지 보내기)
-                client!!.send(packet)
-                Log.d("Socket","Client and Server connected")
+//                client!!.send(packet)
+//                Log.d("Socket","Client and Server connected")
             } catch (e: Exception){
                 Log.d("Exception",e.toString())
             } catch (e: SocketTimeoutException){
@@ -147,7 +149,9 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
 
 
     private fun updateUI() {
-        if (tracking_graphic_overlay == null) return
+        if (tracking_graphic_overlay == null) {
+            return
+        }
         tracking_graphic_overlay.setTrackingMethod(tracking)
 
         val handler = Handler()
@@ -189,7 +193,7 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
         } else {// orientation locked(portrait)
             tracking_graphic_overlay.setCameraInfo(height, width, frontCamera)
         }
-        //Log.d("TTT","바운딩 박스: " + height + " " + width); //박스 그리는 ..
+        Log.d("TTT","bounding: " + height + " " + width) //박스 그리는 ..
 
 
         //Create frame metadata
@@ -211,6 +215,7 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
                     trackingStarted = true
                 } else {
                     PivoProSdk.getInstance().updateTrackingFrame(image, metadata)
+
                 }
             }
             Tracking.ACTION -> {//action
@@ -257,6 +262,8 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
         orientation: Int,
         frontCamera: Boolean
     ) {
+        check = false
+
         this.frontCamera = frontCamera
 
         Log.e(
@@ -291,6 +298,7 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
                     PivoProSdk.getInstance()
                         .starPersonTracking(metadata, byteArray, sensitivity, aiTrackerListener)
                     trackingStarted = true
+
                 } else {
                     PivoProSdk.getInstance().updateTrackingFrame(byteArray, metadata)
                 }
@@ -325,6 +333,8 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
             else -> {
                 trackingStarted = false
                 region = null
+               // Log.d("none","no person");
+
             }
         }
     }
@@ -383,6 +393,8 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
             frameWidth: Int,
             frameHeight: Int
         ) {
+            check = true
+
             // clear graphic overlay
             tracking_graphic_overlay.clear()
             // being tracked object
@@ -437,18 +449,23 @@ open class CameraBaseFragment : Fragment(), ICameraCallback {
         }
 
         override fun onTracking(rect: Rect?) {
+            check = true
+
             tracking_graphic_overlay.clear()
 
             if (rect != null) {
                 val graphic = ActionGraphic(tracking_graphic_overlay, rect)
                 tracking_graphic_overlay.add(graphic)
                 tracking_graphic_overlay.postInvalidate()
+
             } else {
                 Log.e("Camera", "update onTracking")
+
             }
         }
 
-        override fun onClear() {}
+        override fun onClear() {
+        }
     }
 
     //쓰레드로 메세지 보내기

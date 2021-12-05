@@ -29,7 +29,6 @@ class Camera2Fragment : CameraBaseFragment() {
 
     override fun onPause() {
         cameraController.onPause()
-
         super.onPause()
     }
 
